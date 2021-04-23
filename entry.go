@@ -301,6 +301,13 @@ func (entry *Entry) Log(level Level, args ...interface{}) {
 		entry.log(level, fmt.Sprint(args...))
 	}
 }
+// Entry Printf family functions
+
+func (entry *Entry) Logf(level Level, format string, args ...interface{}) {
+	if entry.Logger.IsLevelEnabled(level) {
+		entry.log(level, fmt.Sprintf(format, args...))
+	}
+}
 
 func (entry *Entry) Trace(args ...interface{}) {
 	entry.Log(TraceLevel, args...)
@@ -339,13 +346,6 @@ func (entry *Entry) Panic(args ...interface{}) {
 	entry.Log(PanicLevel, args...)
 }
 
-// Entry Printf family functions
-
-func (entry *Entry) Logf(level Level, format string, args ...interface{}) {
-	if entry.Logger.IsLevelEnabled(level) {
-		entry.Log(level, fmt.Sprintf(format, args...))
-	}
-}
 
 func (entry *Entry) Tracef(format string, args ...interface{}) {
 	entry.Logf(TraceLevel, format, args...)
