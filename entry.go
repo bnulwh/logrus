@@ -27,6 +27,7 @@ var (
 const (
 	maximumCallerDepth int = 25
 	knownLogrusFrames  int = 4
+	defaultCallerSkip int= 8
 )
 
 func init() {
@@ -175,6 +176,19 @@ func getPackageName(f string) string {
 	return f
 }
 
+func getDefaultCaller() *runtime.Frame  {
+	rpc := make([]uintptr, 1)
+	n := runtime.Callers(defaultCallerSkip+1,rpc)
+	if n < 1 {
+		return nil
+	}
+	frame, _ := runtime.CallersFrames(rpc).Next()
+	if frame.PC != 0{
+		return &frame
+	}
+	return nil
+}
+
 // getCaller retrieves the name of the first non-logrus calling function
 func getCaller() *runtime.Frame {
 	// cache this package's fully-qualified name
@@ -236,7 +250,8 @@ func (entry *Entry) log(level Level, msg string) {
 	newEntry.Logger.mu.Unlock()
 
 	if reportCaller {
-		newEntry.Caller = getCaller()
+		//newEntry.Caller = getCaller()
+		newEntry.Caller = getDefaultCaller()
 	}
 
 	newEntry.fireHooks()
