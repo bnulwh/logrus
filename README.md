@@ -1,4 +1,4 @@
-# Logrus <img src="http://i.imgur.com/hTeVwmJ.png" width="40" height="40" alt=":walrus:" class="emoji" title=":walrus:"/> [![Build Status](https://github.com/sirupsen/logrus/workflows/CI/badge.svg)](https://github.com/sirupsen/logrus/actions?query=workflow%3ACI) [![Build Status](https://travis-ci.org/sirupsen/logrus.svg?branch=master)](https://travis-ci.org/sirupsen/logrus) [![Go Reference](https://pkg.go.dev/badge/github.com/sirupsen/logrus.svg)](https://pkg.go.dev/github.com/sirupsen/logrus)
+# Logrus <img src="http://i.imgur.com/hTeVwmJ.png" width="40" height="40" alt=":walrus:" class="emoji" title=":walrus:"/> [![Build Status](https://github.com/bnulwh/logrus/workflows/CI/badge.svg)](https://github.com/bnulwh/logrus/actions?query=workflow%3ACI) [![Build Status](https://travis-ci.org/bnulwh/logrus.svg?branch=master)](https://travis-ci.org/bnulwh/logrus) [![Go Reference](https://pkg.go.dev/badge/github.com/bnulwh/logrus.svg)](https://pkg.go.dev/github.com/bnulwh/logrus)
 
 Logrus is a structured logger for Go (golang), completely API compatible with
 the standard library logger.
@@ -28,12 +28,12 @@ import Logrus as both upper- and lower-case. Due to the Go package environment,
 this caused issues in the community and we needed a standard. Some environments
 experienced problems with the upper-case variant, so the lower-case was decided.
 Everything using `logrus` will need to use the lower-case:
-`github.com/sirupsen/logrus`. Any package that isn't, should be changed.
+`github.com/bnulwh/logrus`. Any package that isn't, should be changed.
 
 To fix Glide, see [these
-comments](https://github.com/sirupsen/logrus/issues/553#issuecomment-306591437).
+comments](https://github.com/bnulwh/logrus/issues/553#issuecomment-306591437).
 For an in-depth explanation of the casing issue, see [this
-comment](https://github.com/sirupsen/logrus/issues/570#issuecomment-313933276).
+comment](https://github.com/bnulwh/logrus/issues/570#issuecomment-313933276).
 
 Nicely color-coded in development (when a TTY is attached, otherwise just
 plain text):
@@ -90,12 +90,12 @@ log.SetReportCaller(true)
 This adds the caller as 'method' like so:
 
 ```json
-{"animal":"penguin","level":"fatal","method":"github.com/sirupsen/arcticcreatures.migrate","msg":"a penguin swims by",
+{"animal":"penguin","level":"fatal","method":"github.com/bnulwh/arcticcreatures.migrate","msg":"a penguin swims by",
 "time":"2014-03-10 19:57:38.562543129 -0400 EDT"}
 ```
 
 ```text
-time="2015-03-26T01:27:38-04:00" level=fatal method=github.com/sirupsen/arcticcreatures.migrate msg="a penguin swims by" animal=penguin
+time="2015-03-26T01:27:38-04:00" level=fatal method=github.com/bnulwh/arcticcreatures.migrate msg="a penguin swims by" animal=penguin
 ```
 Note that this does add measurable overhead - the cost will depend on the version of Go, but is
 between 20 and 40% in recent tests with 1.6 and 1.7.  You can validate this in your
@@ -109,7 +109,7 @@ go test -bench=.*CallerTracing
 
 The organization's name was changed to lower-case--and this will not be changed
 back. If you are getting import conflicts due to case sensitivity, please use
-the lower-case import: `github.com/sirupsen/logrus`.
+the lower-case import: `github.com/bnulwh/logrus`.
 
 #### Example
 
@@ -119,7 +119,7 @@ The simplest way to use Logrus is simply the package-level exported logger:
 package main
 
 import (
-  log "github.com/sirupsen/logrus"
+  log "github.com/bnulwh/logrus"
 )
 
 func main() {
@@ -130,7 +130,7 @@ func main() {
 ```
 
 Note that it's completely api-compatible with the stdlib logger, so you can
-replace your `log` imports everywhere with `log "github.com/sirupsen/logrus"`
+replace your `log` imports everywhere with `log "github.com/bnulwh/logrus"`
 and you'll now have the flexibility of Logrus. You can customize it all you
 want:
 
@@ -139,7 +139,7 @@ package main
 
 import (
   "os"
-  log "github.com/sirupsen/logrus"
+  log "github.com/bnulwh/logrus"
 )
 
 func init() {
@@ -190,7 +190,7 @@ package main
 
 import (
   "os"
-  "github.com/sirupsen/logrus"
+  "github.com/bnulwh/logrus"
 )
 
 // Create a new instance of the logger. You can have any number of instances.
@@ -265,9 +265,9 @@ Logrus comes with [built-in hooks](hooks/). Add those, or your custom hook, in
 
 ```go
 import (
-  log "github.com/sirupsen/logrus"
+  log "github.com/bnulwh/logrus"
   "gopkg.in/gemnasium/logrus-airbrake-hook.v2" // the package is named "airbrake"
-  logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
+  logrus_syslog "github.com/bnulwh/logrus/hooks/syslog"
   "log/syslog"
 )
 
@@ -287,7 +287,7 @@ func init() {
 ```
 Note: Syslog hook also support connecting to local syslog (Ex. "/dev/log" or "/var/run/syslog" or "/var/run/log"). For the detail, please check the [syslog hook README](hooks/syslog/README.md).
 
-A list of currently known service hooks can be found in this wiki [page](https://github.com/sirupsen/logrus/wiki/Hooks)
+A list of currently known service hooks can be found in this wiki [page](https://github.com/bnulwh/logrus/wiki/Hooks)
 
 
 #### Level logging
@@ -338,7 +338,7 @@ could do:
 
 ```go
 import (
-  log "github.com/sirupsen/logrus"
+  log "github.com/bnulwh/logrus"
 )
 
 init() {
@@ -370,9 +370,9 @@ The built-in logging formatters are:
   * When colors are enabled, levels are truncated to 4 characters by default. To disable
     truncation set the `DisableLevelTruncation` field to `true`.
   * When outputting to a TTY, it's often helpful to visually scan down a column where all the levels are the same width. Setting the `PadLevelText` field to `true` enables this behavior, by adding padding to the level text.
-  * All options are listed in the [generated docs](https://godoc.org/github.com/sirupsen/logrus#TextFormatter).
+  * All options are listed in the [generated docs](https://godoc.org/github.com/bnulwh/logrus#TextFormatter).
 * `logrus.JSONFormatter`. Logs fields as JSON.
-  * All options are listed in the [generated docs](https://godoc.org/github.com/sirupsen/logrus#JSONFormatter).
+  * All options are listed in the [generated docs](https://godoc.org/github.com/bnulwh/logrus#JSONFormatter).
 
 Third party logging formatters:
 
@@ -460,8 +460,8 @@ Logrus has a built in facility for asserting the presence of log messages. This 
 
 ```go
 import(
-  "github.com/sirupsen/logrus"
-  "github.com/sirupsen/logrus/hooks/test"
+  "github.com/bnulwh/logrus"
+  "github.com/bnulwh/logrus/hooks/test"
   "github.com/stretchr/testify/assert"
   "testing"
 )
