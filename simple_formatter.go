@@ -35,7 +35,7 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 		entry.Time.Format("2006-01-02 15:04:05.000"),
 		entry.Level.String()))
 	if entry.Logger.ReportCaller && entry.Caller != nil {
-		b.WriteString(fmt.Sprintf("[ %s : %d %s ]",
+		b.WriteString(fmt.Sprintf("[ %10s : %4d : %10s() ] : ",
 			filepath.Base(entry.Caller.File),
 			entry.Caller.Line,
 			getFuncName(entry.Caller.Func),

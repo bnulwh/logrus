@@ -87,7 +87,7 @@ func (mw *MutexWrap) Disable() {
 func New() *Logger {
 	return &Logger{
 		Out:          os.Stderr,
-		Formatter:    new(SimpleFormatter),
+		Formatter:    &SimpleFormatter{Colored:true},
 		Hooks:        make(LevelHooks),
 		Level:        InfoLevel,
 		ExitFunc:     os.Exit,

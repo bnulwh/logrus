@@ -27,7 +27,7 @@ var (
 const (
 	maximumCallerDepth int = 25
 	knownLogrusFrames  int = 4
-	defaultCallerSkip int= 8
+	defaultCallerSkip int= 7
 )
 
 func init() {
@@ -178,7 +178,7 @@ func getPackageName(f string) string {
 
 func getDefaultCaller() *runtime.Frame  {
 	rpc := make([]uintptr, 1)
-	n := runtime.Callers(defaultCallerSkip+1,rpc)
+	n := runtime.Callers(defaultCallerSkip,rpc)
 	if n < 1 {
 		return nil
 	}
