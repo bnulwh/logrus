@@ -1,30 +1,27 @@
 package lfs
+
 import (
 	"fmt"
 	"github.com/bnulwh/logrus"
+	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sync"
+	"time"
 )
 
 // We are logging to file, strip colors to make the output more readable.
 var defaultFormatter = &logrus.TextFormatter{DisableColors: true}
 
-// PathMap is map for mapping a log level to a file's path.
-// Multiple levels may share a file, but multiple files may not be used for one level.
-type PathMap map[logrus.Level]string
-
-// WriterMap is map for mapping a log level to an io.Writer.
-// Multiple levels may share a writer, but multiple writers may not be used for one level.
-type WriterMap map[logrus.Level]io.Writer
-
 // LfsHook is a hook to handle writing to local log files.
 type LfsHook struct {
-	paths     PathMap
-	writers   WriterMap
+	paths     logrus.PathMap
+	writers   logrus.WriterMap
 	levels    []logrus.Level
 	lock      *sync.Mutex
 	formatter logrus.Formatter
@@ -33,6 +30,42 @@ type LfsHook struct {
 	defaultWriter    io.Writer
 	hasDefaultPath   bool
 	hasDefaultWriter bool
+}
+
+func createFileLogger(level, logPath string) (*rotatelogs.RotateLogs, error) {
+	prefix := ""
+	if len(level) > 0 {
+		prefix = "." + level
+	}
+	return rotatelogs.New(
+		logPath+prefix+".%Y%m%d%H%M.log",
+		rotatelogs.WithLinkName(logPath+".log"),
+		rotatelogs.WithMaxAge(time.Hour*24*7),
+		rotatelogs.WithRotationTime(time.Hour),
+	)
+}
+
+func ConfigLocalFileSystemLogger(logPath, logFileName string) {
+	baseLogPath := path.Join(logPath, logFileName)
+	debugWriter, err := createFileLogger("debug", baseLogPath)
+	infoWriter, err := createFileLogger("info", baseLogPath)
+	warnWriter, err := createFileLogger("warn", baseLogPath)
+	errorWriter, err := createFileLogger("error", baseLogPath)
+	commonWriter, err := createFileLogger("", baseLogPath)
+	multiErrorWriter := io.MultiWriter(errorWriter, commonWriter)
+	if err != nil {
+		logrus.Errorf("config local file system logger error: %+v", errors.WithStack(err))
+	}
+	lfHook := NewLocalFileSystemHook(logrus.WriterMap{
+		logrus.DebugLevel: io.MultiWriter(debugWriter, commonWriter),
+		logrus.InfoLevel:  io.MultiWriter(infoWriter, commonWriter),
+		logrus.WarnLevel:  io.MultiWriter(warnWriter, commonWriter),
+		logrus.ErrorLevel: multiErrorWriter,
+		logrus.FatalLevel: multiErrorWriter,
+		logrus.PanicLevel: multiErrorWriter,
+	}, &logrus.SimpleFormatter{})
+	//logrus.AddHook(NewContextHook())
+	logrus.AddHook(lfHook)
 }
 
 // NewHook returns new LFS hook.
@@ -52,15 +85,15 @@ func NewLocalFileSystemHook(output interface{}, formatter logrus.Formatter) *Lfs
 	case io.Writer:
 		hook.SetDefaultWriter(output.(io.Writer))
 		break
-	case PathMap:
-		hook.paths = output.(PathMap)
-		for level := range output.(PathMap) {
+	case logrus.PathMap:
+		hook.paths = output.(logrus.PathMap)
+		for level := range output.(logrus.PathMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
-	case WriterMap:
-		hook.writers = output.(WriterMap)
-		for level := range output.(WriterMap) {
+	case logrus.WriterMap:
+		hook.writers = output.(logrus.WriterMap)
+		for level := range output.(logrus.WriterMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
@@ -68,6 +101,7 @@ func NewLocalFileSystemHook(output interface{}, formatter logrus.Formatter) *Lfs
 		panic(fmt.Sprintf("unsupported level map type: %v", reflect.TypeOf(output)))
 	}
 
+	//logrus.AddHook(hook)
 	return hook
 }
 

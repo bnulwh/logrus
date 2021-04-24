@@ -1,5 +1,7 @@
 package logrus
 
+import "io"
+
 // A hook to be fired when logging on the logging levels returned from
 // `Levels()` on your implementation of the interface. Note that this is not
 // fired in a goroutine or a channel with workers, you should handle such
@@ -12,6 +14,13 @@ type Hook interface {
 
 // Internal type for storing the hooks on a logger instance.
 type LevelHooks map[Level][]Hook
+// PathMap is map for mapping a log level to a file's path.
+// Multiple levels may share a file, but multiple files may not be used for one level.
+type PathMap map[Level]string
+
+// WriterMap is map for mapping a log level to an io.Writer.
+// Multiple levels may share a writer, but multiple writers may not be used for one level.
+type WriterMap map[Level]io.Writer
 
 // Add a hook to an instance of logger. This is called with
 // `log.Hooks.Add(new(MyHook))` where `MyHook` implements the `Hook` interface.
