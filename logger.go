@@ -86,12 +86,12 @@ func (mw *MutexWrap) Disable() {
 // It's recommended to make this a global instance called `log`.
 func New() *Logger {
 	return &Logger{
-		Out:          os.Stderr,
+		Out:          os.Stdout,
 		Formatter:    &SimpleFormatter{Colored:true},
 		Hooks:        make(LevelHooks),
-		Level:        InfoLevel,
+		Level:        DebugLevel,
 		ExitFunc:     os.Exit,
-		ReportCaller: false,
+		ReportCaller: true,
 	}
 }
 
