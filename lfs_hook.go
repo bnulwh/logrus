@@ -2,7 +2,6 @@ package lfs
 
 import (
 	"fmt"
-	"github.com/bnulwh/logrus"
 	"io"
 	"log"
 	"os"
@@ -12,15 +11,15 @@ import (
 )
 
 // We are logging to file, strip colors to make the output more readable.
-var defaultFormatter = &logrus.TextFormatter{DisableColors: true}
+var defaultFormatter = &TextFormatter{DisableColors: true}
 
 // LfsHook is a hook to handle writing to local log files.
 type LfsHook struct {
-	paths     logrus.PathMap
-	writers   logrus.WriterMap
-	levels    []logrus.Level
+	paths     PathMap
+	writers   WriterMap
+	levels    []Level
 	lock      *sync.Mutex
-	formatter logrus.Formatter
+	formatter Formatter
 
 	defaultPath      string
 	defaultWriter    io.Writer
@@ -32,7 +31,7 @@ type LfsHook struct {
 // NewHook returns new LFS hook.
 // Output can be a string, io.Writer, WriterMap or PathMap.
 // If using io.Writer or WriterMap, user is responsible for closing the used io.Writer.
-func NewLocalFileSystemHook(output interface{}, formatter logrus.Formatter) *LfsHook {
+func newLocalFileSystemHook(output interface{}, formatter Formatter) *LfsHook {
 	hook := &LfsHook{
 		lock: new(sync.Mutex),
 	}
@@ -46,15 +45,15 @@ func NewLocalFileSystemHook(output interface{}, formatter logrus.Formatter) *Lfs
 	case io.Writer:
 		hook.SetDefaultWriter(output.(io.Writer))
 		break
-	case logrus.PathMap:
-		hook.paths = output.(logrus.PathMap)
-		for level := range output.(logrus.PathMap) {
+	case PathMap:
+		hook.paths = output.(PathMap)
+		for level := range output.(PathMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
-	case logrus.WriterMap:
-		hook.writers = output.(logrus.WriterMap)
-		for level := range output.(logrus.WriterMap) {
+	case WriterMap:
+		hook.writers = output.(WriterMap)
+		for level := range output.(WriterMap) {
 			hook.levels = append(hook.levels, level)
 		}
 		break
@@ -62,21 +61,21 @@ func NewLocalFileSystemHook(output interface{}, formatter logrus.Formatter) *Lfs
 		panic(fmt.Sprintf("unsupported level map type: %v", reflect.TypeOf(output)))
 	}
 
-	//logrus.AddHook(hook)
+	//AddHook(hook)
 	return hook
 }
 
 // SetFormatter sets the format that will be used by hook.
 // If using text formatter, this method will disable color output to make the log file more readable.
-func (hook *LfsHook) SetFormatter(formatter logrus.Formatter) {
+func (hook *LfsHook) SetFormatter(formatter Formatter) {
 	hook.lock.Lock()
 	defer hook.lock.Unlock()
 	if formatter == nil {
 		formatter = defaultFormatter
 	} else {
 		switch formatter.(type) {
-		case *logrus.TextFormatter:
-			textFormatter := formatter.(*logrus.TextFormatter)
+		case *TextFormatter:
+			textFormatter := formatter.(*TextFormatter)
 			textFormatter.DisableColors = true
 		}
 	}
@@ -102,7 +101,7 @@ func (hook *LfsHook) SetDefaultWriter(defaultWriter io.Writer) {
 
 // Fire writes the log file to defined path or using the defined writer.
 // User who run this function needs write permissions to the file or directory if the file does not yet exist.
-func (hook *LfsHook) Fire(entry *logrus.Entry) error {
+func (hook *LfsHook) Fire(entry *Entry) error {
 	hook.lock.Lock()
 	defer hook.lock.Unlock()
 	if hook.writers != nil || hook.hasDefaultWriter {
@@ -115,7 +114,7 @@ func (hook *LfsHook) Fire(entry *logrus.Entry) error {
 }
 
 // Write a log line to an io.Writer.
-func (hook *LfsHook) ioWrite(entry *logrus.Entry) error {
+func (hook *LfsHook) ioWrite(entry *Entry) error {
 	var (
 		writer io.Writer
 		msg    []byte
@@ -143,7 +142,7 @@ func (hook *LfsHook) ioWrite(entry *logrus.Entry) error {
 }
 
 // Write a log line directly to a file.
-func (hook *LfsHook) fileWrite(entry *logrus.Entry) error {
+func (hook *LfsHook) fileWrite(entry *Entry) error {
 	var (
 		fd   *os.File
 		path string
@@ -182,6 +181,6 @@ func (hook *LfsHook) fileWrite(entry *logrus.Entry) error {
 }
 
 // Levels returns configured log levels.
-func (hook *LfsHook) Levels() []logrus.Level {
-	return logrus.AllLevels
+func (hook *LfsHook) Levels() []Level {
+	return AllLevels
 }

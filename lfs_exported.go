@@ -1,7 +1,6 @@
 package logrus
 
 import (
-	"github.com/bnulwh/logrus/hooks/lfs"
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/pkg/errors"
 	"io"
@@ -33,7 +32,7 @@ func ConfigLocalFileSystemLogger(logPath, logFileName string) {
 	if err != nil {
 		Errorf("config local file system logger error: %+v", errors.WithStack(err))
 	}
-	lfHook := lfs.NewLocalFileSystemHook(WriterMap{
+	lfHook := newLocalFileSystemHook(WriterMap{
 		DebugLevel: io.MultiWriter(debugWriter, commonWriter),
 		InfoLevel:  io.MultiWriter(infoWriter, commonWriter),
 		WarnLevel:  io.MultiWriter(warnWriter, commonWriter),
