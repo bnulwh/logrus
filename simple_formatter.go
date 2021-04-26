@@ -31,11 +31,11 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 			b.WriteString("\x1b[31;1m")
 		}
 	}
-	b.WriteString(fmt.Sprintf("[%s] [%8s] ",
+	b.WriteString(fmt.Sprintf("[%s] [%7s] ",
 		entry.Time.Format("2006-01-02 15:04:05.000"),
 		entry.Level.String()))
 	if entry.Logger.ReportCaller && entry.Caller != nil {
-		b.WriteString(fmt.Sprintf("[ %10s : %4d : %10s() ] : ",
+		b.WriteString(fmt.Sprintf("[ %s : %d : %s() ] : ",
 			filepath.Base(entry.Caller.File),
 			entry.Caller.Line,
 			getFuncName(entry.Caller.Func),
