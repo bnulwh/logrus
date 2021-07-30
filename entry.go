@@ -27,7 +27,7 @@ var (
 const (
 	maximumCallerDepth int = 25
 	knownLogrusFrames  int = 4
-	defaultCallerSkip int= 7
+	defaultCallerSkip  int = 5
 )
 
 func init() {
@@ -176,14 +176,14 @@ func getPackageName(f string) string {
 	return f
 }
 
-func getDefaultCaller() *runtime.Frame  {
+func getDefaultCaller() *runtime.Frame {
 	rpc := make([]uintptr, 1)
-	n := runtime.Callers(defaultCallerSkip,rpc)
+	n := runtime.Callers(defaultCallerSkip, rpc)
 	if n < 1 {
 		return nil
 	}
 	frame, _ := runtime.CallersFrames(rpc).Next()
-	if frame.PC != 0{
+	if frame.PC != 0 {
 		return &frame
 	}
 	return nil
@@ -316,6 +316,7 @@ func (entry *Entry) Log(level Level, args ...interface{}) {
 		entry.log(level, fmt.Sprint(args...))
 	}
 }
+
 // Entry Printf family functions
 
 func (entry *Entry) Logf(level Level, format string, args ...interface{}) {
@@ -325,123 +326,203 @@ func (entry *Entry) Logf(level Level, format string, args ...interface{}) {
 }
 
 func (entry *Entry) Trace(args ...interface{}) {
-	entry.Log(TraceLevel, args...)
+	//entry.Log(TraceLevel, args...)
+	if entry.Logger.IsLevelEnabled(TraceLevel) {
+		entry.log(TraceLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Debug(args ...interface{}) {
-	entry.Log(DebugLevel, args...)
+	//entry.Log(DebugLevel, args...)
+	if entry.Logger.IsLevelEnabled(DebugLevel) {
+		entry.log(DebugLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Print(args ...interface{}) {
-	entry.Info(args...)
+	//entry.Info(args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Info(args ...interface{}) {
-	entry.Log(InfoLevel, args...)
+	//entry.Log(InfoLevel, args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Warn(args ...interface{}) {
-	entry.Log(WarnLevel, args...)
+	//entry.Log(WarnLevel, args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Warning(args ...interface{}) {
-	entry.Warn(args...)
+	//entry.Warn(args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Error(args ...interface{}) {
-	entry.Log(ErrorLevel, args...)
+	//entry.Log(ErrorLevel, args...)
+	if entry.Logger.IsLevelEnabled(ErrorLevel) {
+		entry.log(ErrorLevel, fmt.Sprint(args...))
+	}
 }
 
 func (entry *Entry) Fatal(args ...interface{}) {
-	entry.Log(FatalLevel, args...)
+	//entry.Log(FatalLevel, args...)
+	if entry.Logger.IsLevelEnabled(FatalLevel) {
+		entry.log(FatalLevel, fmt.Sprint(args...))
+	}
 	entry.Logger.Exit(1)
 }
 
 func (entry *Entry) Panic(args ...interface{}) {
-	entry.Log(PanicLevel, args...)
+	//entry.Log(PanicLevel, args...)
+	if entry.Logger.IsLevelEnabled(PanicLevel) {
+		entry.log(PanicLevel, fmt.Sprint(args...))
+	}
 }
 
-
 func (entry *Entry) Tracef(format string, args ...interface{}) {
-	entry.Logf(TraceLevel, format, args...)
+	//entry.Logf(TraceLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(TraceLevel) {
+		entry.log(TraceLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Debugf(format string, args ...interface{}) {
-	entry.Logf(DebugLevel, format, args...)
+	//entry.Logf(DebugLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(DebugLevel) {
+		entry.log(DebugLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Infof(format string, args ...interface{}) {
-	entry.Logf(InfoLevel, format, args...)
+	//entry.Logf(InfoLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Printf(format string, args ...interface{}) {
-	entry.Infof(format, args...)
+	//entry.Infof(format, args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Warnf(format string, args ...interface{}) {
-	entry.Logf(WarnLevel, format, args...)
+	//entry.Logf(WarnLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Warningf(format string, args ...interface{}) {
-	entry.Warnf(format, args...)
+	//entry.Warnf(format, args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Errorf(format string, args ...interface{}) {
-	entry.Logf(ErrorLevel, format, args...)
+	//entry.Logf(ErrorLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(ErrorLevel) {
+		entry.log(ErrorLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 func (entry *Entry) Fatalf(format string, args ...interface{}) {
-	entry.Logf(FatalLevel, format, args...)
+	//entry.Logf(FatalLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(FatalLevel) {
+		entry.log(FatalLevel, fmt.Sprintf(format, args...))
+	}
 	entry.Logger.Exit(1)
 }
 
 func (entry *Entry) Panicf(format string, args ...interface{}) {
-	entry.Logf(PanicLevel, format, args...)
+	//entry.Logf(PanicLevel, format, args...)
+	if entry.Logger.IsLevelEnabled(PanicLevel) {
+		entry.log(PanicLevel, fmt.Sprintf(format, args...))
+	}
 }
 
 // Entry Println family functions
 
 func (entry *Entry) Logln(level Level, args ...interface{}) {
 	if entry.Logger.IsLevelEnabled(level) {
-		entry.Log(level, entry.sprintlnn(args...))
+		entry.log(level, entry.sprintlnn(args...))
 	}
 }
 
 func (entry *Entry) Traceln(args ...interface{}) {
-	entry.Logln(TraceLevel, args...)
+	//entry.Logln(TraceLevel, args...)
+	if entry.Logger.IsLevelEnabled(TraceLevel) {
+		entry.log(TraceLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Debugln(args ...interface{}) {
-	entry.Logln(DebugLevel, args...)
+	//entry.Logln(DebugLevel, args...)
+	if entry.Logger.IsLevelEnabled(DebugLevel) {
+		entry.log(DebugLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Infoln(args ...interface{}) {
 	entry.Logln(InfoLevel, args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Println(args ...interface{}) {
-	entry.Infoln(args...)
+	//entry.Infoln(args...)
+	if entry.Logger.IsLevelEnabled(InfoLevel) {
+		entry.log(InfoLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Warnln(args ...interface{}) {
-	entry.Logln(WarnLevel, args...)
+	//entry.Logln(WarnLevel, args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Warningln(args ...interface{}) {
-	entry.Warnln(args...)
+	//entry.Warnln(args...)
+	if entry.Logger.IsLevelEnabled(WarnLevel) {
+		entry.log(WarnLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Errorln(args ...interface{}) {
-	entry.Logln(ErrorLevel, args...)
+	//entry.Logln(ErrorLevel, args...)
+	if entry.Logger.IsLevelEnabled(ErrorLevel) {
+		entry.log(ErrorLevel, entry.sprintlnn(args...))
+	}
 }
 
 func (entry *Entry) Fatalln(args ...interface{}) {
-	entry.Logln(FatalLevel, args...)
+	//entry.Logln(FatalLevel, args...)
+	if entry.Logger.IsLevelEnabled(FatalLevel) {
+		entry.log(FatalLevel, entry.sprintlnn(args...))
+	}
 	entry.Logger.Exit(1)
 }
 
 func (entry *Entry) Panicln(args ...interface{}) {
-	entry.Logln(PanicLevel, args...)
+	//entry.Logln(PanicLevel, args...)
+	if entry.Logger.IsLevelEnabled(PanicLevel) {
+		entry.log(PanicLevel, entry.sprintlnn(args...))
+	}
 }
 
 // Sprintlnn => Sprint no newline. This is to get the behavior of how
