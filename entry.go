@@ -27,7 +27,7 @@ var (
 const (
 	maximumCallerDepth int = 25
 	knownLogrusFrames  int = 4
-	defaultCallerSkip  int = 5
+	defaultCallerSkip  int = 7
 )
 
 func init() {
