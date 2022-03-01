@@ -155,6 +155,21 @@ func (logger *Logger) Logf(level Level, format string, args ...interface{}) {
 		logger.releaseEntry(entry)
 	}
 }
+func (logger *Logger) Log(level Level, args ...interface{}) {
+	if logger.IsLevelEnabled(level) {
+		entry := logger.newEntry()
+		entry.Log(level, args...)
+		logger.releaseEntry(entry)
+	}
+}
+
+func (logger *Logger) LogFn(level Level, fn LogFunction) {
+	if logger.IsLevelEnabled(level) {
+		entry := logger.newEntry()
+		entry.Log(level, fn()...)
+		logger.releaseEntry(entry)
+	}
+}
 
 func (logger *Logger) Tracef(format string, args ...interface{}) {
 	logger.Logf(TraceLevel, format, args...)
@@ -179,7 +194,7 @@ func (logger *Logger) Warnf(format string, args ...interface{}) {
 }
 
 func (logger *Logger) Warningf(format string, args ...interface{}) {
-	logger.Warnf(format, args...)
+	logger.Logf(WarnLevel, format, args...)
 }
 
 func (logger *Logger) Errorf(format string, args ...interface{}) {
@@ -193,22 +208,6 @@ func (logger *Logger) Fatalf(format string, args ...interface{}) {
 
 func (logger *Logger) Panicf(format string, args ...interface{}) {
 	logger.Logf(PanicLevel, format, args...)
-}
-
-func (logger *Logger) Log(level Level, args ...interface{}) {
-	if logger.IsLevelEnabled(level) {
-		entry := logger.newEntry()
-		entry.Log(level, args...)
-		logger.releaseEntry(entry)
-	}
-}
-
-func (logger *Logger) LogFn(level Level, fn LogFunction) {
-	if logger.IsLevelEnabled(level) {
-		entry := logger.newEntry()
-		entry.Log(level, fn()...)
-		logger.releaseEntry(entry)
-	}
 }
 
 func (logger *Logger) Trace(args ...interface{}) {

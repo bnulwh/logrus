@@ -1,6 +1,7 @@
 module github.com/bnulwh/logrus
 
 require (
+	github.com/bnulwh/logrus/ci v0.0.0-20210730084126-7ee129e44289 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.4 // indirect
