@@ -32,8 +32,8 @@ func SetReportCaller(include bool) {
 }
 
 // SetLevel sets the standard logger level.
-func SetLevel(level Level) {
-	std.SetLevel(level)
+func SetLevel(level ...Level) {
+	std.SetLevel(level...)
 }
 
 // GetLevel returns the standard logger level.

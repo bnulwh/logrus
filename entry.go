@@ -13,7 +13,6 @@ import (
 )
 
 var (
-
 	// qualified package name, cached at first use
 	logrusPackage string
 
@@ -53,7 +52,9 @@ type Entry struct {
 
 	// Level the log entry was logged at: Trace, Debug, Info, Warn, Error, Fatal or Panic
 	// This field will be set on entry firing and the value will be equal to the one in Logger struct field.
-	Level Level
+	Level        Level
+	ConsoleLevel Level
+	HookLevel    Level
 
 	// Calling method, with package name
 	Caller *runtime.Frame
@@ -75,7 +76,9 @@ func NewEntry(logger *Logger) *Entry {
 	return &Entry{
 		Logger: logger,
 		// Default is three fields, plus one optional.  Give a little extra room.
-		Data: make(Fields, 6),
+		Data:         make(Fields, 6),
+		ConsoleLevel: logger.ConsoleLevel,
+		HookLevel:    logger.HookLevel,
 	}
 }
 
@@ -84,7 +87,14 @@ func (entry *Entry) Dup() *Entry {
 	for k, v := range entry.Data {
 		data[k] = v
 	}
-	return &Entry{Logger: entry.Logger, Data: data, Time: entry.Time, Context: entry.Context, err: entry.err}
+	return &Entry{Logger: entry.Logger,
+		Data:         data,
+		Time:         entry.Time,
+		Context:      entry.Context,
+		err:          entry.err,
+		ConsoleLevel: entry.Logger.ConsoleLevel,
+		HookLevel:    entry.Logger.HookLevel,
+	}
 }
 
 // Returns the bytes representation of this entry from the formatter.
@@ -253,8 +263,9 @@ func (entry *Entry) log(level Level, msg string) {
 		//newEntry.Caller = getCaller()
 		newEntry.Caller = getDefaultCaller()
 	}
-
-	newEntry.fireHooks()
+	if newEntry.HookLevel >= level {
+		newEntry.fireHooks(level)
+	}
 	buffer = bufPool.Get()
 	defer func() {
 		newEntry.Buffer = nil
@@ -263,8 +274,9 @@ func (entry *Entry) log(level Level, msg string) {
 	}()
 	buffer.Reset()
 	newEntry.Buffer = buffer
-
-	newEntry.write()
+	if newEntry.ConsoleLevel >= level {
+		newEntry.write()
+	}
 
 	newEntry.Buffer = nil
 
@@ -283,7 +295,7 @@ func (entry *Entry) getBufferPool() (pool BufferPool) {
 	return bufferPool
 }
 
-func (entry *Entry) fireHooks() {
+func (entry *Entry) fireHooks(level Level) {
 	var tmpHooks LevelHooks
 	entry.Logger.mu.Lock()
 	tmpHooks = make(LevelHooks, len(entry.Logger.Hooks))
@@ -292,7 +304,7 @@ func (entry *Entry) fireHooks() {
 	}
 	entry.Logger.mu.Unlock()
 
-	err := tmpHooks.Fire(entry.Level, entry)
+	err := tmpHooks.Fire(level, entry)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to fire hook: %v\n", err)
 	}
