@@ -16,7 +16,7 @@ func createFileLogger(level, logPath string) (*rotatelogs.RotateLogs, error) {
 	return rotatelogs.New(
 		logPath+prefix+".%Y%m%d%H%M.log",
 		rotatelogs.WithLinkName(logPath+prefix+".log"),
-		rotatelogs.WithMaxAge(time.Hour*24*7),
+		rotatelogs.WithMaxAge(GetMaxAge()),
 		rotatelogs.WithRotationTime(time.Hour),
 	)
 }

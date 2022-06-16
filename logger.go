@@ -39,6 +39,7 @@ type Logger struct {
 	// logged.
 	ConsoleLevel Level
 	HookLevel    Level
+	MaxAge       time.Duration
 	// Used to sync writing to the log. Locking is enabled by Default
 	mu MutexWrap
 	// Reusable empty entry
@@ -94,6 +95,7 @@ func New() *Logger {
 		HookLevel:    DebugLevel,
 		ExitFunc:     os.Exit,
 		ReportCaller: true,
+		MaxAge:       time.Hour * 24 * 7,
 	}
 }
 
@@ -517,6 +519,10 @@ func (logger *Logger) GetLevel() Level {
 	return logger.consoleLevel()
 }
 
+func (logger *Logger) GetMaxAge() time.Duration {
+	return logger.MaxAge
+}
+
 // AddHook adds a hook to the logger hooks.
 func (logger *Logger) AddHook(hook Hook) {
 	logger.mu.Lock()
@@ -563,4 +569,10 @@ func (logger *Logger) SetBufferPool(pool BufferPool) {
 	logger.mu.Lock()
 	defer logger.mu.Unlock()
 	logger.BufferPool = pool
+}
+
+func (logger *Logger) SetMaxAge(duration time.Duration) {
+	logger.mu.Lock()
+	defer logger.mu.Unlock()
+	logger.MaxAge = duration
 }

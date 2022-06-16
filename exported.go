@@ -41,6 +41,13 @@ func GetLevel() Level {
 	return std.GetLevel()
 }
 
+func SetMaxAge(duration time.Duration) {
+	std.SetMaxAge(duration)
+}
+func GetMaxAge() time.Duration {
+	return std.GetMaxAge()
+}
+
 // IsLevelEnabled checks if the log level of the standard logger is greater than the level param
 func IsLevelEnabled(level Level) bool {
 	return std.IsLevelEnabled(level)
