@@ -1,37 +1,58 @@
 package logrus
 
 import (
-	"github.com/lestrrat-go/file-rotatelogs"
-	"github.com/pkg/errors"
+	"fmt"
 	"io"
-	"path"
+	"path/filepath"
 	"time"
 )
 
-func createFileLogger(level, logPath string) (*rotatelogs.RotateLogs, error) {
+func createRotatingWriter(level, logPath string) (*RotatingFileWriter, error) {
 	prefix := ""
 	if len(level) > 0 {
 		prefix = "." + level
 	}
-	return rotatelogs.New(
-		logPath+prefix+".%Y%m%d%H%M.log",
-		rotatelogs.WithLinkName(logPath+prefix+".log"),
-		rotatelogs.WithMaxAge(GetMaxAge()),
-		rotatelogs.WithRotationTime(time.Hour),
-	)
+	dir := filepath.Dir(logPath)
+	baseName := filepath.Base(logPath) + prefix
+	linkName := filepath.Base(logPath) + prefix + ".log"
+	return NewRotatingFileWriter(RotatingFileConfig{
+		Dir:      dir,
+		BaseName: baseName,
+		Ext:      ".log",
+		Rotation: time.Hour,
+		MaxAge:   GetMaxAge(),
+		LinkName: linkName,
+	})
 }
 
 func ConfigLocalFileSystemLogger(logPath, logFileName string) {
-	baseLogPath := path.Join(logPath, logFileName)
-	debugWriter, err := createFileLogger("debug", baseLogPath)
-	infoWriter, err := createFileLogger("info", baseLogPath)
-	warnWriter, err := createFileLogger("warn", baseLogPath)
-	errorWriter, err := createFileLogger("error", baseLogPath)
-	commonWriter, err := createFileLogger("", baseLogPath)
-	multiErrorWriter := io.MultiWriter(errorWriter, commonWriter)
+	baseLogPath := filepath.Join(logPath, logFileName)
+	debugWriter, err := createRotatingWriter("debug", baseLogPath)
 	if err != nil {
-		Errorf("config local file system logger error: %+v", errors.WithStack(err))
+		Errorf("config local file system logger error: %v", fmt.Errorf("create debug writer: %w", err))
+		return
 	}
+	infoWriter, err := createRotatingWriter("info", baseLogPath)
+	if err != nil {
+		Errorf("config local file system logger error: %v", fmt.Errorf("create info writer: %w", err))
+		return
+	}
+	warnWriter, err := createRotatingWriter("warn", baseLogPath)
+	if err != nil {
+		Errorf("config local file system logger error: %v", fmt.Errorf("create warn writer: %w", err))
+		return
+	}
+	errorWriter, err := createRotatingWriter("error", baseLogPath)
+	if err != nil {
+		Errorf("config local file system logger error: %v", fmt.Errorf("create error writer: %w", err))
+		return
+	}
+	commonWriter, err := createRotatingWriter("", baseLogPath)
+	if err != nil {
+		Errorf("config local file system logger error: %v", fmt.Errorf("create common writer: %w", err))
+		return
+	}
+	multiErrorWriter := io.MultiWriter(errorWriter, commonWriter)
 	lfHook := newLocalFileSystemHook(WriterMap{
 		DebugLevel: io.MultiWriter(debugWriter, commonWriter),
 		InfoLevel:  io.MultiWriter(infoWriter, commonWriter),
@@ -40,6 +61,5 @@ func ConfigLocalFileSystemLogger(logPath, logFileName string) {
 		FatalLevel: multiErrorWriter,
 		PanicLevel: multiErrorWriter,
 	}, &SimpleFormatter{})
-
 	AddHook(lfHook)
 }
