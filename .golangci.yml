@@ -28,7 +28,9 @@ linters-settings:
 
 linters:
   enable:
-    - megacheck
+    - staticcheck
+    - unused
+    - gosimple
     - govet
   disable:
     - maligned
