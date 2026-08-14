@@ -13,10 +13,11 @@ import (
 func TestFieldValueError(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := &Logger{
-		Out:       buf,
-		Formatter: new(JSONFormatter),
-		Hooks:     make(LevelHooks),
-		Level:     DebugLevel,
+		Out:          buf,
+		Formatter:    new(JSONFormatter),
+		Hooks:        make(LevelHooks),
+		ConsoleLevel: DebugLevel,
+		HookLevel:    DebugLevel,
 	}
 	l.WithField("func", func() {}).Info("test")
 	fmt.Println(buf.String())
@@ -31,10 +32,11 @@ func TestFieldValueError(t *testing.T) {
 func TestNoFieldValueError(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := &Logger{
-		Out:       buf,
-		Formatter: new(JSONFormatter),
-		Hooks:     make(LevelHooks),
-		Level:     DebugLevel,
+		Out:          buf,
+		Formatter:    new(JSONFormatter),
+		Hooks:        make(LevelHooks),
+		ConsoleLevel: DebugLevel,
+		HookLevel:    DebugLevel,
 	}
 	l.WithField("str", "str").Info("test")
 	fmt.Println(buf.String())
@@ -55,10 +57,11 @@ func TestWarninglnNotEqualToWarning(t *testing.T) {
 	formatter.DisableLevelTruncation = true
 
 	l := &Logger{
-		Out:       buf,
-		Formatter: formatter,
-		Hooks:     make(LevelHooks),
-		Level:     DebugLevel,
+		Out:          buf,
+		Formatter:    formatter,
+		Hooks:        make(LevelHooks),
+		ConsoleLevel: DebugLevel,
+		HookLevel:    DebugLevel,
 	}
 	l.Warning("hello,", "world")
 

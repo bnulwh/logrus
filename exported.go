@@ -53,6 +53,41 @@ func IsLevelEnabled(level Level) bool {
 	return std.IsLevelEnabled(level)
 }
 
+// IsTraceEnabled checks if the trace level of the standard logger is enabled.
+func IsTraceEnabled() bool {
+	return std.IsLevelEnabled(TraceLevel)
+}
+
+// IsDebugEnabled checks if the debug level of the standard logger is enabled.
+func IsDebugEnabled() bool {
+	return std.IsLevelEnabled(DebugLevel)
+}
+
+// IsInfoEnabled checks if the info level of the standard logger is enabled.
+func IsInfoEnabled() bool {
+	return std.IsLevelEnabled(InfoLevel)
+}
+
+// IsWarnEnabled checks if the warn level of the standard logger is enabled.
+func IsWarnEnabled() bool {
+	return std.IsLevelEnabled(WarnLevel)
+}
+
+// IsErrorEnabled checks if the error level of the standard logger is enabled.
+func IsErrorEnabled() bool {
+	return std.IsLevelEnabled(ErrorLevel)
+}
+
+// IsFatalEnabled checks if the fatal level of the standard logger is enabled.
+func IsFatalEnabled() bool {
+	return std.IsLevelEnabled(FatalLevel)
+}
+
+// IsPanicEnabled checks if the panic level of the standard logger is enabled.
+func IsPanicEnabled() bool {
+	return std.IsLevelEnabled(PanicLevel)
+}
+
 // AddHook adds a hook to the standard logger hooks.
 func AddHook(hook Hook) {
 	std.AddHook(hook)

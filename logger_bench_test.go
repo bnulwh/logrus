@@ -26,9 +26,10 @@ func BenchmarkDummyLoggerNoLock(b *testing.B) {
 
 func doLoggerBenchmark(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		Out:       out,
-		Level:     InfoLevel,
-		Formatter: formatter,
+		Out:          out,
+		ConsoleLevel: InfoLevel,
+		HookLevel:    InfoLevel,
+		Formatter:    formatter,
 	}
 	entry := logger.WithFields(fields)
 	b.RunParallel(func(pb *testing.PB) {
@@ -40,9 +41,10 @@ func doLoggerBenchmark(b *testing.B, out *os.File, formatter Formatter, fields F
 
 func doLoggerBenchmarkNoLock(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		Out:       out,
-		Level:     InfoLevel,
-		Formatter: formatter,
+		Out:          out,
+		ConsoleLevel: InfoLevel,
+		HookLevel:    InfoLevel,
+		Formatter:    formatter,
 	}
 	logger.SetNoLock()
 	entry := logger.WithFields(fields)

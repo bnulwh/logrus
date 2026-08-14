@@ -211,7 +211,8 @@ func (p *panickyHook) Fire(entry *Entry) error {
 func TestEntryHooksPanic(t *testing.T) {
 	logger := New()
 	logger.Out = &bytes.Buffer{}
-	logger.Level = InfoLevel
+	logger.ConsoleLevel = InfoLevel
+	logger.HookLevel = InfoLevel
 	logger.Hooks.Add(&panickyHook{})
 
 	defer func() {

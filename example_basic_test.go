@@ -12,7 +12,8 @@ func Example_basic() {
 	log.Formatter = new(logrus.TextFormatter)                     //default
 	log.Formatter.(*logrus.TextFormatter).DisableColors = true    // remove colors
 	log.Formatter.(*logrus.TextFormatter).DisableTimestamp = true // remove timestamp from test output
-	log.Level = logrus.TraceLevel
+	log.ConsoleLevel = logrus.TraceLevel
+	log.HookLevel = logrus.TraceLevel
 	log.Out = os.Stdout
 
 	// file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY, 0666)
