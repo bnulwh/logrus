@@ -2,3 +2,7 @@ logrus
 vendor
 
 .idea/
+
+cover.out
+coverage.html
+logrus-*.html
