@@ -8,6 +8,7 @@ import (
 
 func Example_basic() {
 	var log = logrus.New()
+	log.ReportCaller = false // this fork defaults ReportCaller to true; disable it so the expected output stays stable
 	log.Formatter = new(logrus.JSONFormatter)
 	log.Formatter = new(logrus.TextFormatter)                     //default
 	log.Formatter.(*logrus.TextFormatter).DisableColors = true    // remove colors

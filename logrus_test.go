@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"runtime"
 	"sync"
 	"testing"
@@ -333,6 +335,7 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 	logger := New()
 	logger.Out = &buffer
 	logger.Formatter = new(JSONFormatter)
+	logger.ReportCaller = false // this test is about field prefixing, not caller info
 
 	llog := logger.WithField("context", "eating raw fish")
 
@@ -369,22 +372,18 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	llog := logger.WithField("context", "eating raw fish")
 
 	llog.Info("looks delicious")
-	//_, _, line, _ := runtime.Caller(0)
+	_, _, line, _ := runtime.Caller(0)
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
-	fmt.Println(fields)
-	fmt.Println(len(fields))
 	require.NoError(t, err, "should have decoded first message")
-	assert.Equal(t, 4, len(fields), "should have msg/time/level/func/context fields")
+	assert.Equal(t, 6, len(fields), "should have msg/time/level/func/file/context fields")
 	assert.Equal(t, "looks delicious", fields["msg"])
 	assert.Equal(t, "eating raw fish", fields["context"])
-	//fmt.Println(fields["func"])
-	//assert.Equal(t,
-	//	"github.com/bnulwh/logrus_test.TestNestedLoggingReportsCorrectCaller", fields["func"])
-	//cwd, err := os.Getwd()
+	assert.Equal(t,
+		"github.com/bnulwh/logrus_test.TestNestedLoggingReportsCorrectCaller", fields["func"])
+	cwd, err := os.Getwd()
 	require.NoError(t, err)
-	//fmt.Println(cwd)
-	//assert.Equal(t, filepath.ToSlash(fmt.Sprintf("%s/logrus_test.go:%d", cwd, line-1)), filepath.ToSlash(fields["file"].(string)))
+	assert.Equal(t, filepath.ToSlash(fmt.Sprintf("%s/logrus_test.go:%d", cwd, line-1)), filepath.ToSlash(fields["file"].(string)))
 
 	buffer.Reset()
 
@@ -402,8 +401,6 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	//_, _, line, _ = runtime.Caller(0)
 
 	err = json.Unmarshal(buffer.Bytes(), &fields)
-	fmt.Println(fields)
-	fmt.Println(len(fields))
 	assert.NoError(t, err, "should have decoded second message")
 	assert.Equal(t, 11, len(fields), "should have all builtin fields plus foo,bar,baz,...")
 	assert.Equal(t, "Stubblefield", fields["Clyde"])
@@ -415,7 +412,6 @@ func TestNestedLoggingReportsCorrectCaller(t *testing.T) {
 	assert.Nil(t, fields["fields.msg"], "should not have prefixed previous `msg` entry")
 	assert.Equal(t,
 		"github.com/bnulwh/logrus_test.TestNestedLoggingReportsCorrectCaller", fields["func"])
-	require.NoError(t, err)
 	//assert.Equal(t, filepath.ToSlash(fmt.Sprintf("%s/logrus_test.go:%d", cwd, line-1)), filepath.ToSlash(fields["file"].(string)))
 
 	logger.ReportCaller = false // return to default value

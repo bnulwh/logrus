@@ -87,10 +87,38 @@ func TestHandler(t *testing.T) {
 		t.Fatalf("can't create go file. %q", err)
 	}
 
+	// Build the test program to an explicit path, then run the binary directly.
+	// On Windows, `go run` can intermittently fail with "Access is denied" when
+	// executing the freshly-linked binary from the build cache (antivirus scan
+	// races), which makes this test flaky.
+	prog := filepath.Join(tempDir, "testprog")
+	if runtime.GOOS == "windows" {
+		prog += ".exe"
+	}
+	cmd := exec.Command("go", "build", "-o", prog, gofile)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("can't build test program: %v\n%s", err, out)
+	}
+
 	outfile := filepath.Join(tempDir, "outfile.out")
 	arg := time.Now().UTC().String()
-	err = exec.Command("go", "run", gofile, outfile, arg).Run()
-	if err == nil {
+
+	// The freshly-linked binary can briefly be held by the antivirus scanner on
+	// Windows, causing CreateProcess to fail with "Access is denied" right after
+	// the build. Retry a few times; once the process actually starts we expect it
+	// to exit non-zero (badHandler panics and is recovered, then os.Exit(1)).
+	var runErr error
+	for i := 0; i < 5; i++ {
+		runErr = exec.Command(prog, outfile, arg).Run()
+		if runErr == nil {
+			t.Fatalf("completed normally, should have failed")
+		}
+		if _, ok := runErr.(*exec.ExitError); ok {
+			break // process ran and exited non-zero, as expected
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+	if runErr == nil {
 		t.Fatalf("completed normally, should have failed")
 	}
 

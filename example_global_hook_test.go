@@ -24,6 +24,7 @@ func (h *GlobalHook) Fire(e *logrus.Entry) error {
 
 func ExampleGlobalHook() {
 	l := logrus.New()
+	l.ReportCaller = false // this fork defaults ReportCaller to true; disable it so the expected output stays stable
 	l.Out = os.Stdout
 	l.Formatter = &logrus.TextFormatter{DisableTimestamp: true, DisableColors: true}
 	l.AddHook(&GlobalHook{})

@@ -16,6 +16,7 @@ func TestDifferentLevelsGoToDifferentWriters(t *testing.T) {
 		DisableTimestamp: true,
 		DisableColors:    true,
 	})
+	log.SetReportCaller(false) // this fork defaults ReportCaller to true; disable it so the expected output stays stable
 	log.SetOutput(ioutil.Discard) // Send all logs to nowhere by default
 
 	log.AddHook(&Hook{
