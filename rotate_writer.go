@@ -19,7 +19,6 @@ type RotatingFileWriter struct {
 	maxAge      time.Duration
 	maxSize     int64
 	linkName    string
-	formatter   *time.Time
 
 	file       *os.File
 	fileSize   int64
