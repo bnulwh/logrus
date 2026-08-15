@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package logrus_test
@@ -13,6 +14,7 @@ import (
 // An example on how to use a hook
 func Example_hook() {
 	var log = logrus.New()
+	log.ReportCaller = false                                      // this fork defaults ReportCaller to true; disable it so the expected output stays stable
 	log.Formatter = new(logrus.TextFormatter)                     // default
 	log.Formatter.(*logrus.TextFormatter).DisableColors = true    // remove colors
 	log.Formatter.(*logrus.TextFormatter).DisableTimestamp = true // remove timestamp from test output
