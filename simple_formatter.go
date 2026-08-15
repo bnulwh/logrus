@@ -2,14 +2,30 @@ package logrus
 
 import (
 	"bytes"
-	"fmt"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
 type SimpleFormatter struct {
 	Colored bool
+}
+
+// simpleTimeFormat is the timestamp layout used for every formatted line.
+const simpleTimeFormat = "2006-01-02 15:04:05.000"
+
+// simplePaddedLevels pre-formats each level to a fixed width of 7 characters
+// (mirrors fmt.Sprintf("%7s", level)), so the hot path avoids Sprintf and a
+// level->string lookup. Indexed by Level value (PanicLevel = 0 .. TraceLevel = 6).
+var simplePaddedLevels = [...]string{
+	"  panic", // PanicLevel
+	"  fatal", // FatalLevel
+	"  error", // ErrorLevel
+	"warning", // WarnLevel
+	"   info", // InfoLevel
+	"  debug", // DebugLevel
+	"  trace", // TraceLevel
 }
 
 func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
@@ -31,15 +47,23 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 			b.WriteString("\x1b[31;1m")
 		}
 	}
-	b.WriteString(fmt.Sprintf("[%s] [%7s] ",
-		entry.Time.Format("2006-01-02 15:04:05.000"),
-		entry.Level.String()))
+	b.WriteByte('[')
+	b.Write(entry.Time.AppendFormat(nil, simpleTimeFormat))
+	b.WriteString("] [")
+	levelText := " unknown"
+	if int(entry.Level) < len(simplePaddedLevels) {
+		levelText = simplePaddedLevels[entry.Level]
+	}
+	b.WriteString(levelText)
+	b.WriteString("] ")
 	if entry.Logger.ReportCaller && entry.Caller != nil {
-		b.WriteString(fmt.Sprintf("[ %s : %d : %s() ] : ",
-			filepath.Base(entry.Caller.File),
-			entry.Caller.Line,
-			getFuncName(entry.Caller.Func),
-		))
+		b.WriteString("[ ")
+		b.WriteString(filepath.Base(entry.Caller.File))
+		b.WriteString(" : ")
+		b.WriteString(strconv.Itoa(entry.Caller.Line))
+		b.WriteString(" : ")
+		b.WriteString(getFuncName(entry.Caller.Func))
+		b.WriteString("() ] : ")
 	}
 	b.WriteString(
 		entry.Message,
@@ -47,7 +71,7 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 	if f.Colored {
 		b.WriteString("\x1b[0m")
 	}
-	b.WriteString("\n")
+	b.WriteByte('\n')
 	return b.Bytes(), nil
 }
 

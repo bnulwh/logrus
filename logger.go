@@ -31,7 +31,8 @@ type Logger struct {
 	// formatters for examples.
 	Formatter Formatter
 
-	// Flag for whether to log caller info (off by default)
+	// Flag for whether to log caller info. On by default in this fork (upstream
+	// logrus defaults this to off).
 	ReportCaller bool
 
 	// The logging level the logger should log at. This is typically (and defaults
@@ -110,7 +111,13 @@ func (logger *Logger) newEntry() *Entry {
 }
 
 func (logger *Logger) releaseEntry(entry *Entry) {
-	entry.Data = map[string]interface{}{}
+	// Clear fields in place instead of allocating a fresh map on every log call.
+	// The pool entry's Data map is only ever written by hooks (via the Dup'd
+	// entry) before release, so clearing it here keeps the pool entries pristine.
+	for k := range entry.Data {
+		delete(entry.Data, k)
+	}
+	entry.Caller = nil
 	logger.entryPool.Put(entry)
 }
 

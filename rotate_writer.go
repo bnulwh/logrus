@@ -150,19 +150,17 @@ func (w *RotatingFileWriter) cleanupLoop() {
 		return
 	}
 	defer ticker.Stop()
-	cutoff := time.Now().Add(-w.maxAge)
 	for {
 		select {
 		case <-w.cleanupCh:
 			return
 		case now := <-ticker.C:
-			w.removeOldFiles(now.Add(-w.maxAge), cutoff)
-			cutoff = now.Add(-w.maxAge)
+			w.removeOldFiles(now.Add(-w.maxAge))
 		}
 	}
 }
 
-func (w *RotatingFileWriter) removeOldFiles(cutoff time.Time, _ time.Time) {
+func (w *RotatingFileWriter) removeOldFiles(cutoff time.Time) {
 	entries, err := os.ReadDir(w.dir)
 	if err != nil {
 		return

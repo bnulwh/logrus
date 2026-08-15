@@ -281,9 +281,12 @@ func (entry *Entry) getBufferPool() (pool BufferPool) {
 }
 
 func (entry *Entry) fireHooks(level Level) {
-	var tmpHooks LevelHooks
 	entry.Logger.mu.Lock()
-	tmpHooks = make(LevelHooks, len(entry.Logger.Hooks))
+	if len(entry.Logger.Hooks) == 0 {
+		entry.Logger.mu.Unlock()
+		return
+	}
+	tmpHooks := make(LevelHooks, len(entry.Logger.Hooks))
 	for k, v := range entry.Logger.Hooks {
 		tmpHooks[k] = v
 	}

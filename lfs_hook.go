@@ -3,8 +3,6 @@ package logrus
 import (
 	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"sync"
 )
 
@@ -77,12 +75,4 @@ func (hook *LfsHook) Fire(entry *Entry) error {
 
 func (hook *LfsHook) Levels() []Level {
 	return AllLevels
-}
-
-func ensureDir(path string) error {
-	dir := filepath.Dir(path)
-	if dir != "" && dir != "." {
-		return os.MkdirAll(dir, os.ModePerm)
-	}
-	return nil
 }
