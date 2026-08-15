@@ -1,3 +1,14 @@
+# 1.9.3
+
+Fixes:
+  * restore accurate caller reporting (walk logrus frames instead of a fragile fixed stack skip), fixing wrong `func`/`file` fields when logging through helpers, closures or inlined calls
+  * make `TestHandler` robust on Windows (build the test program explicitly and retry execution to avoid a transient antivirus lock on freshly built binaries)
+  * update tests to match the fork's default `ReportCaller = true` behavior
+
+Docs:
+  * add Chinese README (README.md) and English README (README_en.md)
+
+
 # 1.8.1
 Code quality:
   * move magefile in its own subdir/submodule to remove magefile dependency on logrus consumer
