@@ -56,7 +56,10 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 	}
 	b.WriteString(levelText)
 	b.WriteString("] ")
-	if entry.Logger.ReportCaller && entry.Caller != nil {
+	// Caller is only populated by entry.log when ReportCaller was true at log
+	// time (read under the logger mutex), so checking it here avoids an unsynchronized
+	// read of Logger.ReportCaller from the hot path (see TestEntryReportCallerRace).
+	if entry.Caller != nil {
 		b.WriteString("[ ")
 		b.WriteString(filepath.Base(entry.Caller.File))
 		b.WriteString(" : ")
