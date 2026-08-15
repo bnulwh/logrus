@@ -1,3 +1,22 @@
+# 1.9.4
+
+Performance:
+  * skip the hooks-map copy entirely when no hooks are registered (the common case), saving one allocation and shortening lock hold time per log call
+  * release pool entries by clearing fields in place instead of allocating a fresh map on every log call, and reset the stale Caller field
+  * rewrite `SimpleFormatter` (the default formatter) to write directly to the buffer: precomputed fixed-width level text, `time.AppendFormat` and `strconv.Itoa` instead of `fmt.Sprintf`
+
+Dependencies:
+  * golang.org/x/sys: v0.0.0-20210218 => v0.30.0 (fixes GO-2022-0493; the remaining GO-2026-5024 requires x/sys v0.44.0 / go 1.25, outside the go1.21 compatibility range and not reachable from this code)
+  * github.com/stretchr/testify: v1.7.0 => v1.11.1 (yaml.v3 bumped to v3.0.1, fixes GO-2022-0603)
+
+Fixes:
+  * add GOOS=wasip1 support to the terminal checks (no terminal, same as js), fixing the cross-build for wasip1
+  * benchmarks: use os.DevNull instead of "/dev/null" so they run on Windows
+
+Cleanup:
+  * remove unused ensureDir helper; drop unused parameter from RotatingFileWriter.removeOldFiles
+
+
 # 1.9.3
 
 Fixes:
