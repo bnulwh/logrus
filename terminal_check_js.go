@@ -1,4 +1,4 @@
-// +build js
+// +build js wasip1
 
 package logrus
 

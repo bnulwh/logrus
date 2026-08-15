@@ -1,4 +1,4 @@
-// +build !appengine,!js,!windows,!nacl,!plan9
+// +build !appengine,!js,!wasip1,!windows,!nacl,!plan9
 
 package logrus
 
