@@ -1,3 +1,24 @@
+# 1.9.5
+
+Performance:
+  * `JSONFormatter`: replace the per-call `json.NewEncoder` reflection path with a hand-rolled JSON writer that is byte-identical to `encoding/json` output (key sorting, string/HTML escaping, number formatting, non-printable Unicode and invalid UTF-8 handling). Scalars write directly into the buffer, complex values fall back to `encoding/json`. ~34% faster on the small-field formatter benchmark, with allocation counts roughly halved on a 4-field entry
+  * `TextFormatter`: write integer/boolean values straight into the buffer (no intermediate string) and quote with `strconv.AppendQuote` instead of `fmt.Sprintf("%q")`; floats keep the slow path so float32 precision and NaN/Inf quoting are unchanged. ~7.5% faster on the small-field formatter benchmark
+  * hot path: reuse pooled entries in place when no hook can observe them, skipping one `Entry` + `Fields` map allocation per log call; snapshot the logger config (caller flag, buffer pool, hooks) under a single lock acquisition instead of two to three
+  * `getCaller`: recycle the PC scratch buffer through a `sync.Pool` (saves ~200B per caller-tracing log; caller reporting is on by default in this fork)
+  * `Level.String`: return switch literals instead of routing through `MarshalText`'s `[]byte` conversions, eliminating one heap allocation per formatted log line
+  * `SimpleFormatter`: format the timestamp with `time.AppendFormat` into a stack buffer, avoiding one allocation per log line
+  * `sprintMsg`/`sprintlnn`: fast path for the common single-string message that avoids `fmt`'s reflection machinery
+
+Fixes:
+  * `Entry.Infoln` logged every message twice (it called `Logln` and then logged again); it now logs exactly once
+  * `SimpleFormatter` no longer reads `Logger.ReportCaller` without synchronization (data-race fix)
+
+CI / Code quality:
+  * fix `golangci-lint` findings and the GitHub Actions failures they caused
+
+Benchmarks (same machine, A/B): `logger.Info("hello")` 1053 -> 665 ns/op with 240B/6 allocs -> 0B/0 allocs; with caller tracing 1551 -> 985 ns/op with 785B/10 allocs -> 340B/3 allocs
+
+
 # 1.9.4
 
 Performance:
