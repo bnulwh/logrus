@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -276,4 +277,19 @@ func TestEntryReportCallerRace(t *testing.T) {
 	go func() {
 		entry.Info("should not race")
 	}()
+}
+
+// Regression test: Entry.Infoln used to log the message twice (it called
+// Logln and then logged again). The message must appear exactly once.
+func TestEntryInfolnLogsOnce(t *testing.T) {
+	var buf bytes.Buffer
+	logger := New()
+	logger.Out = &buf
+	logger.Formatter = &SimpleFormatter{}
+
+	logger.WithField("k", "v").Infoln("marker-message")
+
+	if got := strings.Count(buf.String(), "marker-message"); got != 1 {
+		t.Fatalf("Infoln logged the message %d times, want 1:\n%s", got, buf.String())
+	}
 }

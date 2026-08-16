@@ -14,9 +14,24 @@ type Level uint32
 
 // Convert the Level to a string. E.g. PanicLevel becomes "panic".
 func (level Level) String() string {
-	if b, err := level.MarshalText(); err == nil {
-		return string(b)
-	} else {
+	// Avoid MarshalText: the []byte(...) conversions there allocate on every
+	// log line. String literals in a switch do not.
+	switch level {
+	case TraceLevel:
+		return "trace"
+	case DebugLevel:
+		return "debug"
+	case InfoLevel:
+		return "info"
+	case WarnLevel:
+		return "warning"
+	case ErrorLevel:
+		return "error"
+	case FatalLevel:
+		return "fatal"
+	case PanicLevel:
+		return "panic"
+	default:
 		return "unknown"
 	}
 }

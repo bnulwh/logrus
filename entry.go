@@ -23,6 +23,17 @@ var (
 	callerInitOnce sync.Once
 )
 
+// callerPcsPool recycles the PC scratch buffer used by getCaller. The buffer
+// escapes to the heap because runtime.CallersFrames retains it, so pooling
+// avoids a ~200B allocation on every caller-tracing log (ReportCaller is on
+// by default in this fork).
+var callerPcsPool = sync.Pool{
+	New: func() interface{} {
+		s := make([]uintptr, maximumCallerDepth)
+		return &s
+	},
+}
+
 const (
 	maximumCallerDepth int = 25
 	knownLogrusFrames  int = 4
@@ -69,6 +80,11 @@ type Entry struct {
 
 	// err may contain a field formatting error
 	err string
+
+	// pooled marks entries handed out by Logger.newEntry. They are single-use
+	// scratch objects that get cleared and returned to the logger's entry pool
+	// after logging, so log() may reuse them in place instead of Dup'ing.
+	pooled bool
 }
 
 func NewEntry(logger *Logger) *Entry {
@@ -205,7 +221,9 @@ func getCaller() *runtime.Frame {
 	})
 
 	// Restrict the lookback frames to avoid runaway lookups
-	pcs := make([]uintptr, maximumCallerDepth)
+	pcsPtr := callerPcsPool.Get().(*[]uintptr)
+	pcs := *pcsPtr
+	defer callerPcsPool.Put(pcsPtr)
 	depth := runtime.Callers(minimumCallerDepth, pcs)
 	frames := runtime.CallersFrames(pcs[:depth])
 
@@ -231,7 +249,36 @@ func (entry Entry) HasCaller() (has bool) {
 func (entry *Entry) log(level Level, msg string) {
 	var buffer *bytes.Buffer
 
-	newEntry := entry.Dup()
+	// Snapshot the mutable logger config under a single lock acquisition:
+	// caller reporting flag, buffer pool, and (only when hooks can fire at this
+	// level) a shallow copy of the hooks map. Hooks are fired after the lock is
+	// released, so hook execution never blocks concurrent loggers.
+	entry.Logger.mu.Lock()
+	reportCaller := entry.Logger.ReportCaller
+	bufPool := entry.getBufferPool()
+	// Note: read the logger's HookLevel, not entry.HookLevel — Entry.WithFields
+	// does not propagate the level onto the entry it returns, and the original
+	// code (via Dup) also read the logger field directly.
+	hooksFire := entry.Logger.HookLevel >= level && len(entry.Logger.Hooks) > 0
+	var tmpHooks LevelHooks
+	if hooksFire {
+		tmpHooks = make(LevelHooks, len(entry.Logger.Hooks))
+		for k, v := range entry.Logger.Hooks {
+			tmpHooks[k] = v
+		}
+	}
+	entry.Logger.mu.Unlock()
+
+	// Pooled entries from Logger.newEntry are single-use scratch objects that
+	// get cleared and returned to the pool after logging, so when no hook can
+	// observe them, log() reuses the entry in place and skips the Dup (one
+	// Entry and one Fields map allocation per log call). User-facing entries
+	// (WithField chains, reused entries), panic logs (the entry becomes the
+	// panic value) and hook-enabled logs keep the original snapshot semantics.
+	newEntry := entry
+	if !entry.pooled || level <= PanicLevel || tmpHooks != nil {
+		newEntry = entry.Dup()
+	}
 
 	if newEntry.Time.IsZero() {
 		newEntry.Time = time.Now()
@@ -240,16 +287,13 @@ func (entry *Entry) log(level Level, msg string) {
 	newEntry.Level = level
 	newEntry.Message = msg
 
-	newEntry.Logger.mu.Lock()
-	reportCaller := newEntry.Logger.ReportCaller
-	bufPool := newEntry.getBufferPool()
-	newEntry.Logger.mu.Unlock()
-
 	if reportCaller {
 		newEntry.Caller = getCaller()
 	}
-	if newEntry.HookLevel >= level {
-		newEntry.fireHooks(level)
+	if tmpHooks != nil {
+		if err := tmpHooks.Fire(level, newEntry); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to fire hook: %v\n", err)
+		}
 	}
 	buffer = bufPool.Get()
 	defer func() {
@@ -280,24 +324,6 @@ func (entry *Entry) getBufferPool() (pool BufferPool) {
 	return bufferPool
 }
 
-func (entry *Entry) fireHooks(level Level) {
-	entry.Logger.mu.Lock()
-	if len(entry.Logger.Hooks) == 0 {
-		entry.Logger.mu.Unlock()
-		return
-	}
-	tmpHooks := make(LevelHooks, len(entry.Logger.Hooks))
-	for k, v := range entry.Logger.Hooks {
-		tmpHooks[k] = v
-	}
-	entry.Logger.mu.Unlock()
-
-	err := tmpHooks.Fire(level, entry)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to fire hook: %v\n", err)
-	}
-}
-
 func (entry *Entry) write() {
 	serialized, err := entry.Logger.Formatter.Format(entry)
 	if err != nil {
@@ -313,7 +339,7 @@ func (entry *Entry) write() {
 
 func (entry *Entry) Log(level Level, args ...interface{}) {
 	if entry.Logger.IsLevelEnabled(level) {
-		entry.log(level, fmt.Sprint(args...))
+		entry.log(level, sprintMsg(args...))
 	}
 }
 
@@ -328,56 +354,56 @@ func (entry *Entry) Logf(level Level, format string, args ...interface{}) {
 func (entry *Entry) Trace(args ...interface{}) {
 	//entry.Log(TraceLevel, args...)
 	if entry.Logger.IsLevelEnabled(TraceLevel) {
-		entry.log(TraceLevel, fmt.Sprint(args...))
+		entry.log(TraceLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Debug(args ...interface{}) {
 	//entry.Log(DebugLevel, args...)
 	if entry.Logger.IsLevelEnabled(DebugLevel) {
-		entry.log(DebugLevel, fmt.Sprint(args...))
+		entry.log(DebugLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Print(args ...interface{}) {
 	//entry.Info(args...)
 	if entry.Logger.IsLevelEnabled(InfoLevel) {
-		entry.log(InfoLevel, fmt.Sprint(args...))
+		entry.log(InfoLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Info(args ...interface{}) {
 	//entry.Log(InfoLevel, args...)
 	if entry.Logger.IsLevelEnabled(InfoLevel) {
-		entry.log(InfoLevel, fmt.Sprint(args...))
+		entry.log(InfoLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Warn(args ...interface{}) {
 	//entry.Log(WarnLevel, args...)
 	if entry.Logger.IsLevelEnabled(WarnLevel) {
-		entry.log(WarnLevel, fmt.Sprint(args...))
+		entry.log(WarnLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Warning(args ...interface{}) {
 	//entry.Warn(args...)
 	if entry.Logger.IsLevelEnabled(WarnLevel) {
-		entry.log(WarnLevel, fmt.Sprint(args...))
+		entry.log(WarnLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Error(args ...interface{}) {
 	//entry.Log(ErrorLevel, args...)
 	if entry.Logger.IsLevelEnabled(ErrorLevel) {
-		entry.log(ErrorLevel, fmt.Sprint(args...))
+		entry.log(ErrorLevel, sprintMsg(args...))
 	}
 }
 
 func (entry *Entry) Fatal(args ...interface{}) {
 	//entry.Log(FatalLevel, args...)
 	if entry.Logger.IsLevelEnabled(FatalLevel) {
-		entry.log(FatalLevel, fmt.Sprint(args...))
+		entry.log(FatalLevel, sprintMsg(args...))
 	}
 	entry.Logger.Exit(1)
 }
@@ -385,7 +411,7 @@ func (entry *Entry) Fatal(args ...interface{}) {
 func (entry *Entry) Panic(args ...interface{}) {
 	//entry.Log(PanicLevel, args...)
 	if entry.Logger.IsLevelEnabled(PanicLevel) {
-		entry.log(PanicLevel, fmt.Sprint(args...))
+		entry.log(PanicLevel, sprintMsg(args...))
 	}
 }
 
@@ -477,9 +503,6 @@ func (entry *Entry) Debugln(args ...interface{}) {
 
 func (entry *Entry) Infoln(args ...interface{}) {
 	entry.Logln(InfoLevel, args...)
-	if entry.Logger.IsLevelEnabled(InfoLevel) {
-		entry.log(InfoLevel, entry.sprintlnn(args...))
-	}
 }
 
 func (entry *Entry) Println(args ...interface{}) {
@@ -525,11 +548,28 @@ func (entry *Entry) Panicln(args ...interface{}) {
 	}
 }
 
+// sprintMsg renders args exactly like fmt.Sprint, but with a fast path for the
+// extremely common single-string case (log.Info("plain message")) that avoids
+// fmt's reflection machinery and a string allocation.
+func sprintMsg(args ...interface{}) string {
+	if len(args) == 1 {
+		if s, ok := args[0].(string); ok {
+			return s
+		}
+	}
+	return fmt.Sprint(args...)
+}
+
 // Sprintlnn => Sprint no newline. This is to get the behavior of how
 // fmt.Sprintln where spaces are always added between operands, regardless of
 // their type. Instead of vendoring the Sprintln implementation to spare a
 // string allocation, we do the simplest thing.
 func (entry *Entry) sprintlnn(args ...interface{}) string {
+	if len(args) == 1 {
+		if s, ok := args[0].(string); ok {
+			return s
+		}
+	}
 	msg := fmt.Sprintln(args...)
 	return msg[:len(msg)-1]
 }

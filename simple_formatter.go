@@ -48,7 +48,10 @@ func (f *SimpleFormatter) Format(entry *Entry) ([]byte, error) {
 		}
 	}
 	b.WriteByte('[')
-	b.Write(entry.Time.AppendFormat(nil, simpleTimeFormat))
+	// AppendFormat into a small stack buffer: the layout is 23 chars, so the
+	// timestamp never spills to the heap (avoids one allocation per log line).
+	var ts [32]byte
+	b.Write(entry.Time.AppendFormat(ts[:0], simpleTimeFormat))
 	b.WriteString("] [")
 	levelText := " unknown"
 	if int(entry.Level) < len(simplePaddedLevels) {

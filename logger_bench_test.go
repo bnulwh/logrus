@@ -77,3 +77,45 @@ func doLoggerBenchmarkWithFormatter(b *testing.B, f Formatter) {
 		}
 	})
 }
+
+// discardWriter is an allocation-free io.Writer for the direct-logger
+// benchmarks below.
+type discardWriter struct{}
+
+func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
+
+// BenchmarkDirectInfo benchmarks the most common path — calling a logging
+// method straight on the Logger (no WithField chain) — which exercises the
+// pooled-entry reuse path in Entry.log.
+func BenchmarkDirectInfo(b *testing.B) {
+	logger := &Logger{
+		Out:          discardWriter{},
+		ConsoleLevel: InfoLevel,
+		HookLevel:    InfoLevel,
+		Formatter:    &SimpleFormatter{},
+	}
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info("hello")
+		}
+	})
+}
+
+// BenchmarkDirectInfoCallerTracing benchmarks the same path with caller
+// tracing enabled (the fork's default in New()).
+func BenchmarkDirectInfoCallerTracing(b *testing.B) {
+	logger := &Logger{
+		Out:          discardWriter{},
+		ConsoleLevel: InfoLevel,
+		HookLevel:    InfoLevel,
+		Formatter:    &SimpleFormatter{},
+		ReportCaller: true,
+	}
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Info("hello")
+		}
+	})
+}
