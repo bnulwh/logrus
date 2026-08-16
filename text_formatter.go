@@ -326,14 +326,31 @@ func (f *TextFormatter) appendKeyValue(b *bytes.Buffer, key string, value interf
 }
 
 func (f *TextFormatter) appendValue(b *bytes.Buffer, value interface{}) {
-	stringVal, ok := value.(string)
-	if !ok {
-		stringVal = fmt.Sprint(value)
+	if s, ok := value.(string); ok {
+		f.appendString(b, s)
+		return
 	}
+	switch value.(type) {
+	case int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		bool:
+		// Integer and boolean output never needs quoting, so write it straight
+		// into the buffer without an intermediate string. Floats stay on the
+		// slow path: NaN/Inf need quoting and float32 must not be widened to
+		// float64 before printing.
+		fmt.Fprint(b, value)
+	default:
+		f.appendString(b, fmt.Sprint(value))
+	}
+}
 
-	if !f.needsQuoting(stringVal) {
-		b.WriteString(stringVal)
-	} else {
-		b.WriteString(fmt.Sprintf("%q", stringVal))
+// appendString writes s, quoting it exactly like fmt.Sprintf("%q", s) when
+// needsQuoting reports that quoting is required. strconv.AppendQuote writes
+// into the buffer directly, avoiding the intermediate string allocation.
+func (f *TextFormatter) appendString(b *bytes.Buffer, s string) {
+	if !f.needsQuoting(s) {
+		b.WriteString(s)
+		return
 	}
+	b.Write(strconv.AppendQuote(b.AvailableBuffer(), s))
 }
